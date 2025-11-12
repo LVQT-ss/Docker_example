@@ -1,5 +1,5 @@
 import express from 'express';
-import { register, login } from '../controllers/auth.controller.js';
+import { register, login, syncFirebaseUser } from '../controllers/auth.controller.js';
 
 const router = express.Router();
 
@@ -58,5 +58,35 @@ router.post('/register', register);
  *         description: Invalid credentials
  */
 router.post('/login', login);
+
+/**
+ * @swagger
+ * /api/auth/sync-firebase:
+ *   post:
+ *     tags: [Authentication]
+ *     summary: Sync Firebase user to database
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [uid, email]
+ *             properties:
+ *               uid:
+ *                 type: string
+ *               email:
+ *                 type: string
+ *               displayName:
+ *                 type: string
+ *               photoURL:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: User synced successfully
+ *       400:
+ *         description: Invalid data
+ */
+router.post('/sync-firebase', syncFirebaseUser);
 
 export default router;

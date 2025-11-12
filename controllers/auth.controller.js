@@ -85,3 +85,65 @@ export const login = async (req, res) => {
         res.status(500).json({ message: error.message });
     }
 };
+
+export const syncFirebaseUser = async (req, res) => {
+    try {
+        const { uid, email, displayName, photoURL } = req.body;
+
+        if (!email) {
+            return res.status(400).json({ message: 'Email is required' });
+        }
+
+        // Check if user exists
+        let user = await User.findOne({ where: { email } });
+
+        if (!user) {
+            // Create new user with Firebase data
+            const username = displayName || email.split('@')[0];
+
+            user = await User.create({
+                username: username.replace(/\s+/g, '_'), // Replace spaces with underscore
+                email,
+                passwordHash: await bcrypt.hash(uid, 10), // Use Firebase UID as password hash
+                avatar: photoURL || null,
+                role: 'user',
+                bio: null
+            });
+        } else {
+            // Update existing user with latest Firebase data
+            if (photoURL && !user.avatar) {
+                user.avatar = photoURL;
+                await user.save();
+            }
+        }
+
+        // Generate JWT token
+        const token = jwt.sign({ id: user.id }, process.env.JWT_SECRET, {
+            expiresIn: '24h'
+        });
+
+        res.json({
+            message: 'User synced successfully',
+            token,
+            user: {
+                id: user.id,
+                username: user.username,
+                email: user.email,
+                avatar: user.avatar,
+                role: user.role,
+                bio: user.bio
+            }
+        });
+    } catch (error) {
+        console.error('Sync Firebase user error:', error);
+
+        // Handle unique constraint errors
+        if (error.name === 'SequelizeUniqueConstraintError') {
+            return res.status(400).json({
+                message: 'Username or email already exists. Please try logging in instead.'
+            });
+        }
+
+        res.status(500).json({ message: 'Failed to sync user: ' + error.message });
+    }
+};

@@ -190,9 +190,24 @@ export const updatePost = async (req, res) => {
         if (req.user.role !== 'admin' && post.user_id !== req.user.id) {
             return res.status(403).json({ message: 'Not authorized' });
         }
-        const { title, introduction, banner, status, publishedAt, youtubeVideoUrl } = req.body;
+        const { title, introduction, banner, status, publishedAt, youtubeVideoUrl, category_ids } = req.body;
         await post.update({ title, introduction, banner, status, publishedAt, youtubeVideoUrl });
-        res.json(post);
+
+        // Update categories if provided
+        if (Array.isArray(category_ids)) {
+            const categories = await Category.findAll({ where: { id: category_ids } });
+            await post.setCategories(categories);
+        }
+
+        // Fetch updated post with associations
+        const updatedPost = await Post.findByPk(post.id, {
+            include: [
+                { model: User, attributes: ['id', 'username', 'avatar'] },
+                { model: Category, through: { attributes: [] } }
+            ]
+        });
+
+        res.json(updatedPost);
     } catch (error) {
         res.status(500).json({ message: error.message });
     }

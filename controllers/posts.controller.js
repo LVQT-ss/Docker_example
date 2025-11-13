@@ -39,7 +39,7 @@ export const createPost = async (req, res) => {
 
         const created = await Post.findByPk(post.id, {
             include: [
-                { model: User, attributes: ['id', 'username'] },
+                { model: User, attributes: ['id', 'username', 'avatar'] },
                 { model: Category, through: { attributes: [] } }
             ]
         });
@@ -56,7 +56,7 @@ export const getPosts = async (req, res) => {
         const where = {};
         if (status) where.status = status;
         const include = [
-            { model: User, attributes: ['id', 'username'] },
+            { model: User, attributes: ['id', 'username', 'avatar'] },
             { model: PostImage, attributes: ['id', 'imageUrl', 'caption', 'orderIndex'] },
         ];
         if (category) {
@@ -150,7 +150,7 @@ export const getPostById = async (req, res) => {
     try {
         const post = await Post.findByPk(req.params.id, {
             include: [
-                { model: User, attributes: ['id', 'username'] },
+                { model: User, attributes: ['id', 'username', 'avatar'] },
                 { model: PostSection, order: [['order_index', 'ASC']] },
                 { model: PostImage },
                 { model: Category, through: { attributes: [] } }
